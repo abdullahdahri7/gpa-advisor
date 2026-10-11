@@ -135,8 +135,8 @@ st.caption("A rule-based expert system: facts + if-then rules + inference.")
 st.subheader("1. Enter your courses")
 default = pd.DataFrame(
     {
-        "Course": ["Programming Fundamentals", "Calculus", "English"],
-        "Credit Hours": [4.0, 3.0, 3.0],
+        "Course": ["Data Structure", "Database Systems", "Artificial Intelligence", "Statistics and Probability", "Software Engineering"],
+        "Credit Hours": [3.0, 3.0, 3.0, 3.0, 3.0],
         "Grade": ["B+", "B", "A"],
     }
 )
