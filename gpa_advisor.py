@@ -133,7 +133,7 @@ st.subheader("1. Enter your courses")
 default = pd.DataFrame(
     {
         "Course": ["Programming Fundamentals", "Calculus", "English"],
-        "Credit Hours": [4.0, 3.0, 3.0],
+        "Credit Hours": [3.0, 3.0, 3.0],
         "Grade": ["B+", "B", "A-"],
     }
 )
