@@ -43,6 +43,21 @@ def calculate_gpa(courses: pd.DataFrame):
     return gpa, total_credits, total_points
 
 
+def cgpa_from_semesters(sem: pd.DataFrame):
+    """CGPA from semester GPAs, weighted by credit hours.
+    Return (cgpa, total_credits, total_quality_points)."""
+    total_credits = 0.0
+    total_points = 0.0
+    for _, row in sem.iterrows():
+        gpa = row["GPA"]
+        credits = row["Credit Hours"]
+        if pd.notna(gpa) and pd.notna(credits) and credits > 0 and 0 <= gpa <= 4:
+            total_credits += credits
+            total_points += gpa * credits
+    cgpa = total_points / total_credits if total_credits else 0.0
+    return cgpa, total_credits, total_points
+
+
 # ---------------------------------------------------------------
 # 3. KNOWLEDGE BASE: if-then rules
 #    Each rule = (name, condition on facts, advice text)
@@ -137,7 +152,7 @@ default = pd.DataFrame(
     {
         "Course": ["Data Structure", "Database Systems", "Artificial Intelligence", "Statistics and Probability", "Software Engineering"],
         "Credit Hours": [3.0, 3.0, 3.0, 3.0, 3.0],
-        "Grade": ["B+", "B", "A"],
+        "Grade": ["B+", "B", "A", "B+", "B"],
     }
 )
 courses = st.data_editor(
@@ -182,14 +197,79 @@ if st.button("Calculate GPA & Get Advice", type="primary"):
         st.session_state["points"] = points
         st.session_state["credits"] = credits
 
+# ---------------------------------------------------------------
+# CGPA from semester GPAs (new section)
+# ---------------------------------------------------------------
 st.divider()
-st.subheader("4. Target GPA planner")
+st.subheader("4. CGPA from semester GPAs")
+st.write(
+    "Already know your GPA for each semester? Enter them here. For example, "
+    "enter Semester 1 and Semester 2 to get your first-year CGPA. The CGPA is "
+    "weighted by credit hours (if every semester has the same credit hours, "
+    "it is just the average of the GPAs)."
+)
+sem_default = pd.DataFrame(
+    {"Semester": [1, 2], "GPA": [2.5, 3.0], "Credit Hours": [18.0, 18.0]}
+)
+sem_df = st.data_editor(
+    sem_default,
+    num_rows="dynamic",
+    use_container_width=True,
+    key="semester_editor",
+    column_config={
+        "Semester": st.column_config.NumberColumn(
+            "Semester", min_value=1, max_value=8, step=1, format="%d"
+        ),
+        "GPA": st.column_config.NumberColumn(
+            "GPA", min_value=0.0, max_value=4.0, step=0.01
+        ),
+        "Credit Hours": st.column_config.NumberColumn(
+            "Credit Hours", min_value=1.0, max_value=30.0, step=0.5
+        ),
+    },
+)
+
+if st.button("Calculate CGPA", key="calc_semester_cgpa"):
+    cgpa, cgpa_credits, cgpa_points = cgpa_from_semesters(sem_df)
+
+    if cgpa_credits == 0:
+        st.error("Please enter at least one semester with a GPA and credit hours.")
+    else:
+        c1, c2 = st.columns(2)
+        c1.metric("CGPA", f"{cgpa:.2f}")
+        c2.metric("Total Credit Hours", f"{cgpa_credits:g}")
+
+        st.write("**Advisor recommendations**")
+        st.caption("Based on your CGPA only, because course grades were not entered.")
+        cgpa_facts = {
+            "gpa": cgpa,
+            "total_credits": cgpa_credits,
+            "has_fail": False,
+            "low_grade_count": 0,
+        }
+        cgpa_facts["is_warning"] = cgpa_facts["gpa"] < 2.50
+        for name, advice in run_inference(cgpa_facts):
+            if "WARNING" in advice:
+                st.error(f"{advice}")
+            else:
+                st.success(f"{advice}")
+            st.caption(f"Rule fired: {name}")
+
+        with st.expander("Show facts used by the inference engine"):
+            st.json(cgpa_facts)
+
+        # Save for the planner below
+        st.session_state["points"] = cgpa_points
+        st.session_state["credits"] = cgpa_credits
+
+st.divider()
+st.subheader("5. Target GPA planner")
 target = st.number_input("Target overall GPA", 0.0, 4.0, 3.5, 0.05)
 remaining = st.number_input("Remaining credit hours in your degree", 1, 150, 60)
 
 if st.button("Plan my target"):
     if "points" not in st.session_state:
-        st.warning("First calculate your GPA in the section above.")
+        st.warning("First calculate your GPA or CGPA in the sections above.")
     else:
         need = required_gpa(
             st.session_state["points"], st.session_state["credits"], target, remaining
