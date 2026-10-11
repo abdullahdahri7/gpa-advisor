@@ -12,13 +12,16 @@ import streamlit as st
 
 # ---------------------------------------------------------------
 # 1. KNOWLEDGE BASE: grade scale (facts)
-#    Change these values if your university uses a different scale.
+#    Scale taken from the university grading table.
 # ---------------------------------------------------------------
 GRADE_POINTS = {
-    "A": 4.00, "A-": 3.67,
-    "B+": 3.33, "B": 3.00, "B-": 2.67,
-    "C+": 2.33, "C": 2.00, "C-": 1.67,
-    "D+": 1.33, "D": 1.00,
+    "A+": 4.00,
+    "A": 3.50,
+    "B+": 3.00,
+    "B": 2.50,
+    "C+": 2.00,
+    "C": 1.50,
+    "C-": 1.00,
     "F": 0.00,
 }
 
@@ -87,7 +90,7 @@ RULES = [
 # ---------------------------------------------------------------
 def derive_facts(courses: pd.DataFrame, gpa: float, total_credits: float) -> dict:
     graded = courses[courses["Grade"].isin(GRADE_POINTS.keys())]
-    low_grades = ["C-", "D+", "D", "F"]
+    low_grades = ["C-", "F"]
     facts = {
         "gpa": gpa,
         "total_credits": total_credits,
@@ -133,8 +136,8 @@ st.subheader("1. Enter your courses")
 default = pd.DataFrame(
     {
         "Course": ["Programming Fundamentals", "Calculus", "English"],
-        "Credit Hours": [3.0, 3.0, 3.0],
-        "Grade": ["B+", "B", "A-"],
+        "Credit Hours": [4.0, 3.0, 3.0],
+        "Grade": ["B+", "B", "A"],
     }
 )
 courses = st.data_editor(
